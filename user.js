@@ -1,5 +1,5 @@
 const sqlite = require('sqlite3').verbose();
-const db = new sqlite.Database('users.db');
+let db = new sqlite.Database('users.db');
 
 db = db.run(
   `CREATE TABLE IF NOT EXISTS users (
@@ -15,15 +15,16 @@ db = db.run(
  */
 exports.getStats = (userName) => {
   // first look up if already in db
-  db.get('SELECT stats FROM users WHERE userName = ?', userName, (err, row) => {
+  // TODO: turn async to sync (serialize?)
+  db = db.get('SELECT stats FROM users WHERE userName = ?', userName, (err, row) => {
     if (row !== undefined) {
       // TODO: how to read/write blobs
       return {1: 2};
     }
     // else fetch from Wiki
     const stats = fetchStats(userName);
-    db.run('INSERT INTO users VALUES (?, ?)', userName, stats);
-    trimDatabase(10);
+    db = db.run('INSERT INTO users VALUES (?, ?)', userName, stats);
+    db = trimDatabase(10);
     // TODO: how big is reasonable?
     
     return stats;
@@ -42,11 +43,12 @@ function fetchStats(userName) {
 /**
  * Throw away old entries if database is too large.
  * @param {number} maxLength
+ * @returns {sqlite.Database}
  */
 function trimDatabase(maxLength) {
-  db.get('SELECT COUNT(*) FROM users', (err, row) => {
+  return db.get('SELECT COUNT(*) FROM users', (err, row) => {
     if (parseInt(row) > maxLength) {
-      db.run('DELETE FROM users ORDER BY time DESC LIMIT 5');
+      db = db.run('DELETE FROM users ORDER BY time DESC LIMIT 5');
     }
   });
 }
