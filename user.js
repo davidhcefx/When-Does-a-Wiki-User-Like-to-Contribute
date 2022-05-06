@@ -15,13 +15,14 @@ db = db.run(
  */
 exports.getStats = (userName) => {
   // first look up if already in db
-  // TODO: turn async to sync (serialize?)
-  db = db.get('SELECT stats FROM users WHERE userName = ?', userName, (err, row) => {
+  // TODO: review each async callbacks
+  db.get('SELECT stats FROM users WHERE userName = ?', userName, (err, row) => {
     if (row !== undefined) {
       // TODO: how to read/write blobs
       return {1: 2};
     }
     // else fetch from Wiki
+    // TODO: async fetch?
     const stats = fetchStats(userName);
     db = db.run('INSERT INTO users VALUES (?, ?)', userName, stats);
     db = trimDatabase(10);
